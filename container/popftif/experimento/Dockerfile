@@ -1,0 +1,49 @@
+# Using Ubuntu 18.04
+FROM ubuntu:18.04
+
+# Avoid interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies for Ubuntu 18.04
+RUN apt-get update && apt-get install -y \
+    cmake \
+    coinor-libclp-dev \
+    coinor-libcoinutils-dev \
+    coinor-libosi-dev \
+    coinor-libcbc-dev \
+    coinor-libcgl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    doxygen \
+    bison \
+    flex \
+    git \
+    g++ \
+    make \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Define the working directory
+WORKDIR /opt/popf-tif
+
+# Clone the repository
+RUN git clone https://github.com/popftif/popf-tif .
+
+# Compile the project
+RUN cd planner/src && \
+    chmod +x ./build-instructions.txt && \
+    ./build-instructions.txt && \
+    cd ../release && \
+    make popf3-clp
+
+# Add the compiled binary to the PATH
+ENV PATH="/opt/popf-tif/planner/release/popf:${PATH}"
+
+# Directory for input files
+WORKDIR /data
+
+# Ensure the compiled binary has execute permissions
+RUN chmod +x /opt/popf-tif/planner/release/popf3-clp || true
+
+# Set the entry point to the compiled binary
+ENTRYPOINT ["popf3-clp"]
